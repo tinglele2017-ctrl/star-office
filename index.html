@@ -956,6 +956,50 @@
         }
 
         /* 手机端专属适配（不影响桌面） */
+        
+        /* ===== 桌面端高度自适应 ===== */
+        @media (min-width: 901px) {
+            body {
+                padding: 10px 0;
+                gap: 8px;
+                overflow-y: auto;
+                min-height: 100vh;
+                height: auto;
+            }
+            #main-stage {
+                width: min(1280px, 100vw);
+                flex-shrink: 0;
+            }
+            #game-container {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1280 / 720;
+                max-height: calc(100vh - 380px);
+            }
+            #game-container canvas {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            #bottom-panels {
+                width: min(1280px, 100vw);
+                margin-top: 10px;
+                flex-shrink: 0;
+            }
+        }
+        @media (min-width: 901px) and (max-height: 850px) {
+            #game-container { max-height: calc(100vh - 340px); }
+            #bottom-panels { margin-top: 6px; gap: 12px; }
+            #memo-panel, #control-bar, #guest-agent-panel { padding: 10px 14px; }
+            #memo-content { max-height: 120px; }
+        }
+        @media (min-width: 901px) and (max-height: 750px) {
+            #game-container { max-height: calc(100vh - 300px); }
+            body { padding: 4px 0; gap: 4px; }
+            #bottom-panels { flex-direction: row; gap: 8px; }
+            #memo-panel, #control-bar, #guest-agent-panel { padding: 8px 10px; min-height: 0; }
+            #memo-content { max-height: 80px; }
+        }
+
         @media (max-width: 900px), (pointer: coarse) {
             html, body {
                 height: 100%;
@@ -4889,6 +4933,17 @@ function toggleBrokerPanel() {
         }
 
         // 假 Agent 气泡逻辑已移除，统一以真实 /agents 数据为准
+
+        
+        // 自动状态循环：每10秒随机切换逗爷状态
+        setInterval(function(){
+            try {
+                var states = ['idle','writing','researching','executing','syncing','error'];
+                var names  = {'idle':'待命','writing':'工作中','researching':'调研中','executing':'执行中','syncing':'同步中','error':'出错了'};
+                var s = states[Math.floor(Math.random()*states.length)];
+                if(typeof setState === 'function') setState(s, names[s]);
+            } catch(e){}
+        }, 10000);
 
         // 启动游戏
         initGame();
