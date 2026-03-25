@@ -3487,37 +3487,42 @@ function toggleBrokerPanel() {
         function renderGuestAgentList() {
             const list = document.getElementById('guest-agent-list');
             if (!list) return;
-            list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在扫描...</div>';
 
-            fetch('/security-check?t=' + Date.now(), { cache: 'no-store' })
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.checks || data.checks.length === 0) {
-                        list.innerHTML = '<div style="color:#e94560;font-size:12px;text-align:center;padding:20px 0;">扫描失败</div>';
-                        return;
-                    }
-                    list.innerHTML = data.checks.map(c => {
-                        const colorMap = { pass: '#50c878', warn: '#ffd700', fail: '#e94560' };
-                        const labelMap = { pass: 'PASS', warn: 'WARN', fail: 'FAIL' };
-                        const color = colorMap[c.status] || '#9ca3af';
-                        const label = labelMap[c.status] || '???';
-                        return `
-                          <div class="guest-agent-item" style="border-left: 3px solid ${color};">
-                            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-                              <span style="font-size:16px;flex-shrink:0;">${c.icon}</span>
-                              <div style="min-width:0;">
-                                <div class="guest-agent-name" style="font-size:13px;">${c.name}</div>
-                                <div style="font-size:10px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.detail}</div>
-                              </div>
-                            </div>
-                            <span style="font-size:9px;font-weight:bold;color:${color};border:1px solid ${color};padding:2px 6px;border-radius:2px;flex-shrink:0;font-family:'ArkPixel',monospace;letter-spacing:1px;">${label}</span>
+            // 先用静态数据渲染，再异步刷新
+            const items = [
+                { icon: '🎯', label: '名称', value: '逗爷', color: '#f0c878' },
+                { icon: '⚡', label: '状态', value: '运行中', color: '#50c878' },
+                { icon: '🏷️', label: '版本', value: '加载中…', color: '#6496ff', id: 'status-version' },
+                { icon: '🐧', label: '系统', value: 'Ubuntu 24.04 LTS (WSL2)', color: '#9ca3af' },
+                { icon: '🧠', label: '模型', value: 'xiaomi/mimo-claw-0301', color: '#c084fc' },
+                { icon: '📡', label: '网关', value: '加载中…', color: '#6496ff', id: 'status-gateway' },
+                { icon: '⏱️', label: '运行', value: '加载中…', color: '#6496ff', id: 'status-uptime' },
+                { icon: '💬', label: '频道', value: 'webchat', color: '#9ca3af' },
+            ];
+
+            function render(data) {
+                list.innerHTML = items.map(it => {
+                    const v = data ? (data[it.id] || it.value) : it.value;
+                    return `
+                      <div class="guest-agent-item" style="border-left:3px solid ${it.color};">
+                        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+                          <span style="font-size:16px;flex-shrink:0;">${it.icon}</span>
+                          <div style="min-width:0;">
+                            <div class="guest-agent-name" style="font-size:13px;color:${it.color};">${it.label}</div>
+                            <div style="font-size:11px;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v}</div>
                           </div>
-                        `;
-                    }).join('');
-                })
-                .catch(() => {
-                    list.innerHTML = '<div style="color:#e94560;font-size:12px;text-align:center;padding:20px 0;">网络错误</div>';
-                });
+                        </div>
+                      </div>`;
+                }).join('');
+            }
+
+            render(null);
+
+            // 异步获取真实数据
+            fetch('/agent-status?t=' + Date.now(), { cache: 'no-store' })
+                .then(r => r.json())
+                .then(d => render(d))
+                .catch(() => {});
         }
 
         function getAreaRect(area) {
