@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逗爷办公室 - 测试页</title>
+<style>
+body { margin: 0; background: #1a1a2e; color: #e8d5c4; font-family: monospace; }
+#overlay {
+    position: fixed; inset: 0; background: #1a1a2e;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 9999; font-size: 18px; color: #ffd700;
+}
+#main { padding: 40px; text-align: center; }
+#main h1 { color: #f0c878; }
+#main .ok { color: #50c878; margin: 10px 0; }
+#main .fail { color: #e94560; margin: 10px 0; }
+</style>
+</head>
+<body>
+<div id="overlay">加载中...</div>
+<div id="main" style="display:none;">
+    <h1>🎯 逗爷的像素办公室</h1>
+    <p>如果你看到这行字，说明页面加载成功了</p>
+    <div id="checks"></div>
+</div>
+<script>
+(function(){
+    var overlay = document.getElementById('overlay');
+    var main = document.getElementById('main');
+    var checks = document.getElementById('checks');
+
+    // 1秒后移除遮罩
+    setTimeout(function(){
+        overlay.style.display = 'none';
+        main.style.display = 'block';
+    }, 1000);
+
+    // 运行检查
+    var results = [];
+
+    // 检查 Phaser
+    results.push({name: 'Phaser.js', ok: typeof Phaser !== 'undefined'});
+    // 检查 fetch
+    results.push({name: 'fetch API', ok: typeof fetch === 'function'});
+    // 检查 canvas
+    var c = document.createElement('canvas');
+    results.push({name: 'Canvas', ok: !!c.getContext('2d')});
+    // 检查 WebP
+    try {
+        var ctx = c.getContext('2d');
+        results.push({name: 'WebP', ok: c.toDataURL('image/webp').indexOf('data:image/webp') === 0});
+    } catch(e) { results.push({name: 'WebP', ok: false}); }
+
+    setTimeout(function(){
+        var html = '';
+        results.forEach(function(r){
+            html += '<p class="' + (r.ok ? 'ok' : 'fail') + '">' +
+                (r.ok ? '✅' : '❌') + ' ' + r.name + '</p>';
+        });
+        checks.innerHTML = html;
+    }, 1500);
+})();
+</script>
+</body>
+</html>
