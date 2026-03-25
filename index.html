@@ -108,10 +108,8 @@
             justify-content: center;
             align-items: center;
             z-index: 100000;
-            animation: loadingFadeOut 0.5s ease 8s forwards;
+            
         }
-        @keyframes loadingFadeOut {
-            to { opacity: 0; pointer-events: none; }
         }
         #loading-text {
             color: #ffd700;
@@ -1199,6 +1197,17 @@
             }
         }
     </style>
+    <script>
+        // 3秒后强制移除加载遮罩（兜底）
+        (function(){
+            var t = setTimeout(function(){
+                var o = document.getElementById("loading-overlay");
+                if(o){ o.style.transition="opacity 0.4s ease"; o.style.opacity="0";
+                    setTimeout(function(){ o.parentNode && o.parentNode.removeChild(o); }, 500);
+                }
+            }, 3000);
+        })();
+    </script>
 </head>
 <body>
     <!-- 加载遮罩 -->
