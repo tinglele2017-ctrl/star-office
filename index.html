@@ -1172,6 +1172,11 @@
                 min-height: 36px;
             }
         }
+    
+        @keyframes taskPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
     <script>
         setTimeout(function(){
@@ -1223,9 +1228,9 @@
 
         <!-- Guest Agent 名单面板（右下角） -->
         <div id="guest-agent-panel">
-            <div id="guest-agent-panel-title">访 客 列 表</div>
+            <div id="guest-agent-panel-title">任 务 中 心</div>
             <div id="guest-agent-list">
-                <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在加载访客...</div>
+                <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在加载...</div>
             </div>
             </div>
         </div>
@@ -1369,7 +1374,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '昨 日 小 记', guestTitle: '访 客 列 表', officeTitle: '逗爷的办公室',
+                memoTitle: '昨 日 小 记', guestTitle: '任 务 中 心', officeTitle: '逗爷的办公室',
                 loadingOffice: '正在加载逗爷的像素办公室...'
             },
             en: {
@@ -3474,52 +3479,38 @@ function toggleBrokerPanel() {
             const list = document.getElementById('guest-agent-list');
             if (!list) return;
 
-            const visitors = getMergedVisitors();
-            if (visitors.length === 0) {
-                list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">暂无访客</div>';
-                return;
-            }
-
-            list.innerHTML = visitors.map(agent => {
-                const name = agent.name || '未命名访客';
-                const authStatus = agent.authStatus || 'pending';
-                const state = agent.state || 'idle';
-                const statusMap = {
-                    approved: '已授权',
-                    pending: '待授权',
-                    rejected: '已拒绝',
-                    offline: '离线'
-                };
-                const stateMap = {
-                    idle: '待命',
-                    writing: '工作',
-                    researching: '调研',
-                    executing: '执行',
-                    syncing: '同步',
-                    error: '报警'
-                };
-
-                const statusText = statusMap[authStatus] || authStatus;
-                const stateText = stateMap[state] || state;
-                const subtitle = `${statusText} · ${stateText}`;
-
-                const pendingActions = `<button onclick="alert('交换 skill 功能开发中')">交换skill</button><button class="leave-btn" onclick="leaveGuestAgent('${agent.agentId}','${name}')">离开房间</button>`;
-
-                return `
-                  <div class="guest-agent-item" data-name="${name}">
-                    <div>
-                      <div class="guest-agent-name">${name}</div>
-                      <div style="font-size:11px;color:#cbd5e1;">${subtitle}</div>
-                    </div>
-                    <div class="guest-agent-buttons">
-                      ${pendingActions}
-                    </div>
-                  </div>
-                `;
-            }).join('');
+            fetch('/agents?t=' + Date.now(), { cache: 'no-store' })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.length) {
+                        list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">暂无任务</div>';
+                        return;
+                    }
+                    const stateColor = { idle:'#7a6a5a', writing:'#50c878', researching:'#6496ff', executing:'#c084fc', syncing:'#f0c878', error:'#e94560' };
+                    const stateLabel = { idle:'待命', writing:'工作', researching:'调研', executing:'执行', syncing:'同步', error:'异常' };
+                    list.innerHTML = data.map(a => {
+                        var c = stateColor[a.state] || '#7a6a5a';
+                        var l = stateLabel[a.state] || a.state;
+                        var pulse = a.state !== 'idle' ? 'animation:taskPulse 2s infinite;' : '';
+                        return '<div class="guest-agent-item" style="border-left:3px solid ' + c + ';">' +
+                          '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
+                            '<span style="font-size:20px;flex-shrink:0;">' + a.emoji + '</span>' +
+                            '<div style="min-width:0;flex:1;">' +
+                              '<div class="guest-agent-name" style="font-size:13px;">' + a.name + '</div>' +
+                              '<div style="font-size:10px;color:#9ca3af;margin-top:2px;">' + a.desc + '</div>' +
+                              '<div style="font-size:11px;color:' + c + ';margin-top:3px;' + pulse + '">' + (a.task || l) + '</div>' +
+                            '</div>' +
+                          '</div>' +
+                          '<span style="font-size:9px;font-weight:bold;color:' + c + ';border:1px solid ' + c + ';padding:2px 6px;border-radius:2px;flex-shrink:0;font-family:ArkPixel,monospace;letter-spacing:1px;">' + l + '</span>' +
+                        '</div>';
+                    }).join('');
+                })
+                .catch(function(){
+                    list.innerHTML = '<div style="color:#e94560;font-size:12px;text-align:center;padding:20px 0;">加载失败</div>';
+                });
         }
 
-        function getAreaRect(area) {
+function getAreaRect(area) {
             // 区域坐标（海辛提供，左上-右下；这里的 x/y 作为 sprite 底部锚点坐标来用）
             // 休息区域范围（511,262）（841,621）
             // 工作区域范围（190,526）（380,683）
