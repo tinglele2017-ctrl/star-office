@@ -468,16 +468,16 @@
         }
         #asset-move-row .btn-move { color:#1f2937; }
         #asset-move-row .btn-move {
-            background-image:url('./btn-move-house-sprite.png?v=1774404499');
+            background-image:url('./btn-move-house-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-move-row .btn-home {
-            background-image:url('./btn-back-home-sprite.png?v=1774404499');
+            background-image:url('./btn-back-home-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-broker-row .btn-broker {
-            background-image:url('./btn-broker-sprite.png?v=1774404499');
+            background-image:url('./btn-broker-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-broker-row .btn-diy {
-            background-image:url('./btn-diy-sprite.png?v=1774404499');
+            background-image:url('./btn-diy-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-manual-panel {
             margin-top:0;
@@ -648,7 +648,7 @@
         #control-bar #btn-state-writing,
         #control-bar #btn-state-syncing,
         #control-bar #btn-state-error {
-            background-image: url('./btn-state-sprite.png?v=1774404499');
+            background-image: url('./btn-state-sprite.png?v={{VERSION_TIMESTAMP}}');
             background-color: transparent !important;
             background-repeat: no-repeat;
             background-size: 300% 100%;
@@ -683,7 +683,7 @@
         }
         /* 装修房间按钮使用像素精灵皮肤 */
         #control-bar #btn-open-drawer {
-            background-image: url('./btn-open-drawer-sprite.png?v=1774404499') !important;
+            background-image: url('./btn-open-drawer-sprite.png?v={{VERSION_TIMESTAMP}}') !important;
             background-color: transparent !important;
             background-repeat: no-repeat !important;
             background-size: 300% 100% !important;
@@ -1195,7 +1195,6 @@
             }
         }
     </style>
-    <script src="static-api.js"></script>
 </head>
 <body>
     <!-- 加载遮罩 -->
@@ -1239,9 +1238,9 @@
 
         <!-- Guest Agent 名单面板（右下角） -->
         <div id="guest-agent-panel">
-            <div id="guest-agent-panel-title">访 客 列 表</div>
+            <div id="guest-agent-panel-title">安 全 检 查</div>
             <div id="guest-agent-list">
-                <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在加载访客...</div>
+                <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在扫描...</div>
             </div>
             </div>
         </div>
@@ -1354,7 +1353,7 @@
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">CN</button>
     </div>
 
-    <script src="./vendor/phaser-3.80.1.min.js?v=1774404499"></script>
+    <script src="./vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
         let uiLang = localStorage.getItem('uiLang') || 'en';
@@ -1457,7 +1456,7 @@
         function ensureMemoBgVisible() {
             const panel = document.getElementById('memo-panel');
             if (!panel) return;
-            panel.style.backgroundImage = "url('./memo-bg.webp?v=1774404499')";
+            panel.style.backgroundImage = "url('./memo-bg.webp?v={{VERSION_TIMESTAMP}}')";
             panel.classList.remove('no-bg');
         }
 
@@ -3488,50 +3487,37 @@ function toggleBrokerPanel() {
         function renderGuestAgentList() {
             const list = document.getElementById('guest-agent-list');
             if (!list) return;
+            list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在扫描...</div>';
 
-            const visitors = getMergedVisitors();
-            if (visitors.length === 0) {
-                list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">暂无访客</div>';
-                return;
-            }
-
-            list.innerHTML = visitors.map(agent => {
-                const name = agent.name || '未命名访客';
-                const authStatus = agent.authStatus || 'pending';
-                const state = agent.state || 'idle';
-                const statusMap = {
-                    approved: '已授权',
-                    pending: '待授权',
-                    rejected: '已拒绝',
-                    offline: '离线'
-                };
-                const stateMap = {
-                    idle: '待命',
-                    writing: '工作',
-                    researching: '调研',
-                    executing: '执行',
-                    syncing: '同步',
-                    error: '报警'
-                };
-
-                const statusText = statusMap[authStatus] || authStatus;
-                const stateText = stateMap[state] || state;
-                const subtitle = `${statusText} · ${stateText}`;
-
-                const pendingActions = `<button onclick="alert('交换 skill 功能开发中')">交换skill</button><button class="leave-btn" onclick="leaveGuestAgent('${agent.agentId}','${name}')">离开房间</button>`;
-
-                return `
-                  <div class="guest-agent-item" data-name="${name}">
-                    <div>
-                      <div class="guest-agent-name">${name}</div>
-                      <div style="font-size:11px;color:#cbd5e1;">${subtitle}</div>
-                    </div>
-                    <div class="guest-agent-buttons">
-                      ${pendingActions}
-                    </div>
-                  </div>
-                `;
-            }).join('');
+            fetch('/security-check?t=' + Date.now(), { cache: 'no-store' })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.checks || data.checks.length === 0) {
+                        list.innerHTML = '<div style="color:#e94560;font-size:12px;text-align:center;padding:20px 0;">扫描失败</div>';
+                        return;
+                    }
+                    list.innerHTML = data.checks.map(c => {
+                        const colorMap = { pass: '#50c878', warn: '#ffd700', fail: '#e94560' };
+                        const labelMap = { pass: 'PASS', warn: 'WARN', fail: 'FAIL' };
+                        const color = colorMap[c.status] || '#9ca3af';
+                        const label = labelMap[c.status] || '???';
+                        return `
+                          <div class="guest-agent-item" style="border-left: 3px solid ${color};">
+                            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+                              <span style="font-size:16px;flex-shrink:0;">${c.icon}</span>
+                              <div style="min-width:0;">
+                                <div class="guest-agent-name" style="font-size:13px;">${c.name}</div>
+                                <div style="font-size:10px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.detail}</div>
+                              </div>
+                            </div>
+                            <span style="font-size:9px;font-weight:bold;color:${color};border:1px solid ${color};padding:2px 6px;border-radius:2px;flex-shrink:0;font-family:'ArkPixel',monospace;letter-spacing:1px;">${label}</span>
+                          </div>
+                        `;
+                    }).join('');
+                })
+                .catch(() => {
+                    list.innerHTML = '<div style="color:#e94560;font-size:12px;text-align:center;padding:20px 0;">网络错误</div>';
+                });
         }
 
         function getAreaRect(area) {
@@ -4043,53 +4029,53 @@ function toggleBrokerPanel() {
 
             // cache-busting to avoid stale background on client/CDN
             // use smaller/new map version provided by user
-            this.load.image('office_bg', './office_bg_small.webp?v=1774404499');
-            this.load.spritesheet('star_idle', './star-idle-v5.png?v=1774404499', { frameWidth: 256, frameHeight: 256 });
+            this.load.image('office_bg', './office_bg_small.webp?v={{VERSION_TIMESTAMP}}');
+            this.load.spritesheet('star_idle', './star-idle-v5.png?v={{VERSION_TIMESTAMP}}', { frameWidth: 256, frameHeight: 256 });
 
             // Furniture
-            this.load.image('sofa_idle', './sofa-idle-v3.png?v=1774404499');
-            this.load.image('sofa_shadow', './sofa-shadow-v1.png?v=1774404499');
+            this.load.image('sofa_idle', './sofa-idle-v3.png?v={{VERSION_TIMESTAMP}}');
+            this.load.image('sofa_shadow', './sofa-shadow-v1.png?v={{VERSION_TIMESTAMP}}');
 
             // Decor
-            this.load.spritesheet('plants', './plants-spritesheet.webp?v=1774404499', { frameWidth: 160, frameHeight: 160 });
-            this.load.spritesheet('posters', './posters-spritesheet.webp?v=1774404499', { frameWidth: 160, frameHeight: 160 });
-            this.load.spritesheet('coffee_machine', './coffee-machine-v3-grid.webp?v=1774404499', { frameWidth: 230, frameHeight: 230 });
-            this.load.image('coffee_machine_shadow', './coffee-machine-shadow-v1.png?v=1774404499');
-            this.load.spritesheet('serverroom', './serverroom-spritesheet.webp?v=1774404499', { frameWidth: 180, frameHeight: 251 });
+            this.load.spritesheet('plants', './plants-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 160, frameHeight: 160 });
+            this.load.spritesheet('posters', './posters-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 160, frameHeight: 160 });
+            this.load.spritesheet('coffee_machine', './coffee-machine-v3-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 230, frameHeight: 230 });
+            this.load.image('coffee_machine_shadow', './coffee-machine-shadow-v1.png?v={{VERSION_TIMESTAMP}}');
+            this.load.spritesheet('serverroom', './serverroom-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 180, frameHeight: 251 });
 
             // Error / bug animation: 180x180, 96 frames (repacked grid)
-            this.load.spritesheet('error_bug', './error-bug-spritesheet-grid.webp?v=1774404499', { frameWidth: 220, frameHeight: 220 });
+            this.load.spritesheet('error_bug', './error-bug-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 220, frameHeight: 220 });
 
             // 运行时 Gemini 配置（用于搬家/中介生图）
             this.geminiConfig = { hasKey: false, model: 'gemini-3.1-flash-image-preview' };
 
             // Cat spritesheet: 160x160, 4x4=16 cats
-            this.load.spritesheet('cats', './cats-spritesheet.webp?v=1774404499', { frameWidth: 160, frameHeight: 160 });
+            this.load.spritesheet('cats', './cats-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 160, frameHeight: 160 });
 
             // Desk
             // Star working animation: repacked to grid to avoid WebGL max texture size limits
             // NOTE: prefer WebP for size, PNG fallback
             // 动态替换后按最新素材识别：当前 writing 素材为 300x300 单帧
-            this.load.spritesheet('star_working', './star-working-spritesheet-grid.webp?v=1774404499', { frameWidth: 300, frameHeight: 300 });
+            this.load.spritesheet('star_working', './star-working-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 300, frameHeight: 300 });
 
             // Sync state animation (256x256, 多帧): 非同步显示首帧，同步从第2帧循环
-            this.load.spritesheet('sync_anim', './sync-animation-v3-grid.webp?v=1774404499', { frameWidth: 256, frameHeight: 256 });
+            this.load.spritesheet('sync_anim', './sync-animation-v3-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 256, frameHeight: 256 });
 
             // Memo background image
             // memo 底图固定走 png，避免某些端 webp 透明通道异常导致“底图丢失”
-            this.load.image('memo_bg', './memo-bg.webp?v=1774404499');
+            this.load.image('memo_bg', './memo-bg.webp?v={{VERSION_TIMESTAMP}}');
             // Desk v2 (webp only)
-            this.load.image('desk_v2', './desk-v3.webp?v=1774404499');
+            this.load.image('desk_v2', './desk-v3.webp?v={{VERSION_TIMESTAMP}}');
             // Flower spritesheet (65x65, 16 frames)
-            this.load.spritesheet('flowers', './flowers-bloom-v2.webp?v=1774404499', { frameWidth: FLOWERS_FRAME_W, frameHeight: FLOWERS_FRAME_H });
+            this.load.spritesheet('flowers', './flowers-bloom-v2.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: FLOWERS_FRAME_W, frameHeight: FLOWERS_FRAME_H });
 
             // Guest/Demo agent sprites
-            this.load.spritesheet('guest_anim_1', './guest_anim_1.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
-            this.load.spritesheet('guest_anim_2', './guest_anim_2.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
-            this.load.spritesheet('guest_anim_3', './guest_anim_3.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
-            this.load.spritesheet('guest_anim_4', './guest_anim_4.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
-            this.load.spritesheet('guest_anim_5', './guest_anim_5.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
-            this.load.spritesheet('guest_anim_6', './guest_anim_6.webp?v=1774404499', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_1', './guest_anim_1.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_2', './guest_anim_2.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_3', './guest_anim_3.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_4', './guest_anim_4.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_5', './guest_anim_5.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
+            this.load.spritesheet('guest_anim_6', './guest_anim_6.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 32, frameHeight: 32 });
         }
 
         function create() {
