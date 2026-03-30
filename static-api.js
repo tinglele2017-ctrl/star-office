@@ -6,27 +6,16 @@
   ];
   var mainState='idle', mainDetail='待命';
 
-  // 昨日工作小记 - 由逗爷自动更新
   var yesterdayMemo = {
     date: '2026-03-26',
-    content: [
-      '📋 创建 OpenClaw 小白教学飞书文档',
-      '  · 5个章节：记忆设置、技能配置、交流提示词、飞书配置、注意事项',
-      '  · 生成6张龙虾吉祥物风格AI配图（NVIDIA FLUX模型）',
-      '  · 从 SegmentFault、菜鸟教程、知乎爬取实用内容',
-      '',
-      '🔧 PUA 模式紧急修复',
-      '  · 子任务卡住16分钟，启动PUA直接接手',
-      '  · 约2分钟搞定全部6张图片插入',
-      '  · P9审查发现3张配图跑题，重新生成4张替换',
-      '',
-      '📝 建立飞书文档权限规范',
-      '  · 所有飞书文档必须给乐少管理者权限(full_access)',
-      '',
-      '📚 Star Office 像素办公室部署',
-      '  · 从 GitHub 下载素材，用 Node.js 搭建替代后端',
-      '  · 部署到 GitHub Pages，3个Agent：逗爷、代码侠、测试员'
-    ].join('\n')
+    content: '· 飞书文档: OpenClaw教学\n' +
+             '  5章+6张AI配图\n' +
+             '· PUA紧急修复\n' +
+             '  配图跑题→重生成4张\n' +
+             '· 文档权限规范\n' +
+             '  给乐少full_access\n' +
+             '· Star Office部署\n' +
+             '  3个Agent上线'
   };
 
   var _fetch=window.fetch;
